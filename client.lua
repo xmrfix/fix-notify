@@ -23,9 +23,6 @@ local function ShowNotification(text, msgType, length)
     })
 end
 
-RegisterNetEvent('QBCore:Notify', ShowNotification)
-
-
 RegisterCommand('notify', function()
     SetNuiFocus(true, true)
     SendNUIMessage({
