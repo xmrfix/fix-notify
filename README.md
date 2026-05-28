@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/1000x300/181b21/10b981?text=MR-FIX+Notification+System" alt="MR-FIX Notify Banner" width="100%">
+  <img src="https://i.imgur.com/FbfjyVF.png" alt="MR-FIX Notify Banner" width="100%">
 
   <h1>🎯 MR-FIX Notification System</h1>
   <p><b>A modern, beautiful, and highly customizable notification system for FiveM.</b></p>
@@ -34,7 +34,7 @@ Players can use the built-in configuration panel to adjust their notification po
 ## 📸 Previews
 
 ### ⚙️ The Settings Dashboard & Notification Types (Success, Error, Info, Warning)
-<img src="https://i.imgur.com/vp7pMWG.gif" width="800" alt="Dashboard & Notification Previews">
+<img src="https://i.imgur.com/dHLzW8G.gif" width="800" alt="Dashboard & Notification Previews">
 
 ---
 
