@@ -35,8 +35,11 @@ Players can use the built-in configuration panel to adjust their notification po
 
 ### ⚙️ The Settings Dashboard & Notification Types (Success, Error, Info, Warning)
 <p align="center">
-  <img src="https://i.imgur.com/dHLzW8G.gif" width="800" alt="Dashboard & Notification Previews">
+  <a href="https://streamable.com/1dd7g6" target="_blank">
+    <img src="https://img.shields.io/badge/Watch-Demo_Video-red?style=for-the-badge&logo=streamable&logoColor=white" />
+  </a>
 </p>
+
 ---
 
 ## 🛠️ Installation
