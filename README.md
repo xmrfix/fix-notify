@@ -34,8 +34,9 @@ Players can use the built-in configuration panel to adjust their notification po
 ## 📸 Previews
 
 ### ⚙️ The Settings Dashboard & Notification Types (Success, Error, Info, Warning)
-<img src="https://i.imgur.com/dHLzW8G.gif" width="800" alt="Dashboard & Notification Previews">
-
+<p align="center">
+  <img src="https://i.imgur.com/dHLzW8G.gif" width="800" alt="Dashboard & Notification Previews">
+</p>
 ---
 
 ## 🛠️ Installation
