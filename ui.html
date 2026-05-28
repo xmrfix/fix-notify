@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MR-FIX Notification System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --container-bg: #181b21;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --input-bg: #21262d;
+            --hover-bg: #30363d;
+            --border-color: #30363d;
+            --border-focus: #10b981;
+            --switch-off: #374151;
+            --shadow-1: rgba(0, 0, 0, 0.5);
+            --shadow-2: rgba(0, 0, 0, 0.3);
+            --noti-bg: #2d3748;
+            --success-tint: #1a231f;
+            --error-tint: #291a1a;
+            --info-tint: #1a1e29;
+            --warning-tint: #292415;
+            --ring-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.light-mode {
+            --bg-color: #f3f4f6;
+            --container-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --input-bg: #ffffff;
+            --hover-bg: #f3f4f6;
+            --border-color: #d1d5db;
+            --border-focus: #10b981;
+            --switch-off: #d1d5db;
+            --shadow-1: rgba(0, 0, 0, 0.1);
+            --shadow-2: rgba(0, 0, 0, 0.05);
+            --noti-bg: #ffffff;
+            --success-tint: #ecfdf5;
+            --error-tint: #fef2f2;
+            --info-tint: #eff6ff;
+            --warning-tint: #fffbeb;
+            --ring-color: rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            background: transparent !important;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px var(--shadow-1), 0 4px 6px -2px var(--shadow-2);
+            width: 100%;
+            max-width: 800px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.4s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+            pointer-events: none;
+        }
+
+        .dashboard.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dashboard-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard { padding: 20px 16px; }
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+                position: relative;
+            }
+            .theme-toggle-btn {
+                position: absolute;
+                top: -8px;
+                right: 0;
+            }
+            .actions-grid { grid-template-columns: 1fr; }
+
+            #notification-container[data-position$="right"] { right: 16px; }
+            #notification-container[data-position$="left"] { left: 16px; }
+            #notification-container[data-position^="top"] { top: 16px; }
+            
+            .notification.step-2-expand {
+                max-width: calc(100vw - 32px) !important;
+                padding-right: 16px !important; 
+            }
+        }
+
+        .form-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-main);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-selected {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
+        }
+
+        .select-selected:hover, .select-selected.select-arrow-active {
+            border-color: var(--border-focus);
+        }
+
+        .select-selected.select-arrow-active {
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .select-selected svg {
+            transition: transform 0.3s ease;
+            color: var(--text-muted);
+        }
+
+        .select-selected.select-arrow-active svg {
+            transform: rotate(180deg);
+        }
+
+        .select-items {
+            position: absolute;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 99;
+            margin-top: 6px;
+            box-shadow: 0 10px 15px -3px var(--shadow-1), 0 4px 6px -2px var(--shadow-2);
+            overflow: hidden;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.3s, border-color 0.3s;
+        }
+
+        .select-hide {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        .select-items div {
+            color: var(--text-main);
+            padding: 12px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s ease, color 0.3s ease;
+        }
+
+        .select-items div:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .same-as-selected {
+            background-color: var(--hover-bg);
+            color: var(--border-focus) !important;
+            font-weight: 600;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--input-bg);
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .switch-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--switch-off);
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .trigger-btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.1s, opacity 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .trigger-btn svg { width: 24px; height: 24px; }
+        .trigger-btn:active { transform: scale(0.96); }
+        .trigger-btn:hover { opacity: 0.9; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        .btn-success { background-color: #10b981; }
+        .btn-error { background-color: #ef4444; }
+        .btn-info { background-color: #3b82f6; }
+        .btn-warning { background-color: #f59e0b; }
+
+        #notification-container {
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 9999;
+            pointer-events: none;
+            transition: top 0.3s, bottom 0.3s, left 0.3s, right 0.3s, transform 0.3s;
+        }
+
+        #notification-container[data-position="top-right"] { top: 32px; right: 32px; align-items: flex-end; }
+        #notification-container[data-position="top-left"] { top: 32px; left: 32px; align-items: flex-start; }
+        #notification-container[data-position="top-center"] { top: 32px; left: 50%; transform: translateX(-50%); align-items: center; }
+        #notification-container[data-position="center-right"] { top: 50%; right: 32px; transform: translateY(-50%); align-items: flex-end; }
+        #notification-container[data-position="center-left"] { top: 50%; left: 32px; transform: translateY(-50%); align-items: flex-start; }
+
+        .notification {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            background: var(--noti-bg);
+            box-shadow: 0 10px 15px -3px var(--shadow-1), 0 4px 6px -2px var(--shadow-2);
+            overflow: hidden;
+            position: relative;
+            box-sizing: border-box;
+            height: 60px;
+            max-width: 60px;
+            border-radius: 30px;
+            padding: 10px;
+            opacity: 0;
+            transition: 
+                transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.3s ease,
+                max-width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                height 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                border-radius 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 0.5s ease;
+            will-change: transform, max-width, height, border-radius;
+        }
+
+        #notification-container[data-position$="right"] .notification { transform: translateX(150%); }
+        #notification-container[data-position$="left"] .notification { transform: translateX(-150%); }
+        #notification-container[data-position="top-center"] .notification { transform: translateY(-150%); }
+
+        #notification-container[data-position] .notification.step-1-slide-in {
+            transform: translate(0, 0);
+            opacity: 1;
+        }
+
+        .notification.leave {
+            opacity: 0;
+            max-width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            padding: 10px;
+        }
+
+        #notification-container[data-position$="right"] .notification.leave { transform: translateX(150%); }
+        #notification-container[data-position$="left"] .notification.leave { transform: translateX(-150%); }
+        #notification-container[data-position="top-center"] .notification.leave { transform: translateY(-150%); }
+
+        .notification.success { --theme-color: #10b981; --theme-bg: var(--success-tint); }
+        .notification.error { --theme-color: #ef4444; --theme-bg: var(--error-tint); }
+        .notification.info { --theme-color: #3b82f6; --theme-bg: var(--info-tint); }
+        .notification.warning { --theme-color: #f59e0b; --theme-bg: var(--warning-tint); }
+
+        .notification.step-2-expand {
+            background-color: var(--theme-bg);
+            max-width: 400px;
+            height: 76px;
+            border-radius: 8px;
+            padding: 16px 24px 16px 14px;
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--theme-color, #10b981);
+            transform-origin: left;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .notification.step-2-expand .progress-bar { 
+            opacity: 0.15;
+        }
+
+        @keyframes shrink {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
+
+        .notification-icon-wrapper {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            box-sizing: border-box;
+            border-radius: 50%;
+            background-color: var(--theme-color, #10b981);
+            border: 5px solid var(--ring-color); 
+            background-clip: padding-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .notification-icon {
+            width: 20px;
+            height: 20px;
+            color: #ffffff;
+        }
+
+        .notification-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-left: 16px;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            min-width: 0; 
+            flex: 1; 
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .notification.step-2-expand .notification-content {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.2s;
+        }
+
+        .dashboard-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dashboard-close-btn:hover {
+            background-color: var(--hover-bg);
+            color: var(--text-main);
+        }
+
+        .notification-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-main);
+            margin: 0 0 4px 0;
+            transition: color 0.3s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 0;
+            transition: color 0.3s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard" id="settings-dashboard" style="display: none;">
+        <div class="dashboard-header">
+            <div>
+                <h1>Notification Settings</h1>
+                <p>Configure your personal notification display preferences.</p>
+            </div>
+            <button class="dashboard-close-btn" onclick="closeDashboard()" aria-label="Close Settings">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="dashboard-grid">
+            <div>
+                <div class="form-section-title">Configuration</div>
+                
+                <div class="form-group">
+                    <label>Position</label>
+                    <div class="custom-select" id="position-select">
+                        <div class="select-selected">
+                            <span class="selected-text">Top Right</span>
+                            <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="16" width="16" xmlns="http://www.w3.org/2000/svg"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="select-items select-hide">
+                            <div data-value="top-right" class="same-as-selected">Top Right</div>
+                            <div data-value="top-left">Top Left</div>
+                            <div data-value="top-center">Top Center</div>
+                            <div data-value="center-left">Center Left</div>
+                            <div data-value="center-right">Center Right</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 24px;">
+                    <div class="switch-container">
+                        <span class="switch-label">Dark Mode</span>
+                        <label class="switch">
+                            <input type="checkbox" id="theme-toggle" checked onchange="toggleThemeSwitch(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="switch-container">
+                        <span class="switch-label">Enable Sounds</span>
+                        <label class="switch">
+                            <input type="checkbox" id="sound-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="form-section-title">Trigger Experience</div>
+                <div class="actions-grid">
+                    <button class="trigger-btn btn-success" onclick="buildAndTrigger('success')">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                        Success
+                    </button>
+                    <button class="trigger-btn btn-error" onclick="buildAndTrigger('error')">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        Error
+                    </button>
+                    <button class="trigger-btn btn-info" onclick="buildAndTrigger('info')">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Info
+                    </button>
+                    <button class="trigger-btn btn-warning" onclick="buildAndTrigger('warning')">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Warning
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container" data-position="top-right"></div>
+
+    <script>
+        function closeDashboard() {
+            const dashboard = document.getElementById('settings-dashboard');
+            dashboard.classList.remove('show');
+            
+            setTimeout(() => {
+                dashboard.style.display = 'none';
+                fetch(`https://${GetParentResourceName()}/closeSettings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=UTF-8',
+                    },
+                    body: JSON.stringify({})
+                });
+            }, 400);
+        }
+
+        function toggleThemeSwitch(isDark) {
+            if (isDark) {
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const selected = document.querySelector('.select-selected');
+            const items = document.querySelector('.select-items');
+            const selectedText = document.querySelector('.selected-text');
+            const options = document.querySelectorAll('.select-items div');
+
+            selected.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.classList.toggle('select-arrow-active');
+                items.classList.toggle('select-hide');
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectedText.innerHTML = this.innerHTML;
+                    
+                    options.forEach(opt => opt.classList.remove('same-as-selected'));
+                    this.classList.add('same-as-selected');
+                    
+                    changePosition(this.getAttribute('data-value'));
+                    
+                    selected.classList.remove('select-arrow-active');
+                    items.classList.add('select-hide');
+                });
+            });
+
+            document.addEventListener('click', function() {
+                selected.classList.remove('select-arrow-active');
+                items.classList.add('select-hide');
+            });
+        });
+
+        function changePosition(pos) {
+            document.getElementById('notification-container').setAttribute('data-position', pos);
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            const soundEnabled = document.getElementById('sound-toggle').checked;
+            if (!soundEnabled) return;
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const now = audioCtx.currentTime;
+
+            const playPop = (freqStart, freqEnd, duration, startTime, vol = 0.1) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.type = 'sine'; 
+                
+                osc.frequency.setValueAtTime(freqStart, startTime);
+                osc.frequency.exponentialRampToValueAtTime(freqEnd, startTime + duration);
+
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(vol, startTime + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            };
+            
+            switch (type) {
+                case 'success':
+                    playPop(400, 600, 0.1, now, 0.1);
+                    playPop(600, 1000, 0.15, now + 0.1, 0.1);
+                    break;
+                case 'error':
+                    playPop(150, 100, 0.15, now, 0.15);
+                    playPop(100, 60, 0.15, now + 0.12, 0.15);
+                    break;
+                case 'info':
+                    playPop(600, 900, 0.1, now, 0.1);
+                    break;
+                case 'warning':
+                    playPop(300, 200, 0.1, now, 0.1);
+                    playPop(300, 200, 0.1, now + 0.15, 0.1);
+                    break;
+            }
+        }
+
+        const icons = {
+            success: `<svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`,
+            error: `<svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>`,
+            info: `<svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+            warning: `<svg class="notification-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`
+        };
+
+        const defaultContent = {
+            success: { title: 'Success', message: 'Action performed successfully.' },
+            error: { title: 'Error', message: 'An unexpected error occurred.' },
+            info: { title: 'Info', message: 'You have a new system notification.' },
+            warning: { title: 'Warning', message: 'Please proceed with caution.' }
+        };
+
+        function buildAndTrigger(type) {
+            const customDuration = 4000;
+
+            const finalTitle = defaultContent[type].title;
+            const finalMessage = defaultContent[type].message;
+
+            triggerNotification(type, finalTitle, finalMessage, customDuration);
+        }
+
+        function triggerNotification(type, title, message, duration) {
+            playSound(type);
+            
+            const container = document.getElementById('notification-container');
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+
+            notification.innerHTML = `
+                <div class="notification-icon-wrapper">
+                    ${icons[type] || icons.success}
+                </div>
+                <div class="notification-content">
+                    <p class="notification-title">${title}</p>
+                    <p class="notification-message">${message}</p>
+                </div>
+                <div class="progress-bar"></div>
+            `;
+
+            container.appendChild(notification);
+
+            void notification.offsetWidth;
+
+            notification.classList.add('step-1-slide-in');
+
+            setTimeout(() => {
+                notification.classList.add('step-2-expand');
+                
+                const progressBar = notification.querySelector('.progress-bar');
+                progressBar.style.animation = `shrink ${duration}ms linear forwards`;
+            }, 400);
+
+            const removeNotification = () => {
+                notification.classList.remove('step-2-expand');
+                notification.classList.remove('step-1-slide-in');
+                notification.classList.add('leave');
+
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 600);
+            };
+
+            setTimeout(removeNotification, duration + 400);
+        }
+
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            if (data.action === 'notify') {
+                triggerNotification(data.type || 'info', data.title || '', data.message || '', data.duration || 4000);
+            } else if (data.action === 'openSettings') {
+                const dashboard = document.getElementById('settings-dashboard');
+                dashboard.style.display = 'block';
+                void dashboard.offsetWidth; // trigger reflow
+                dashboard.classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>
